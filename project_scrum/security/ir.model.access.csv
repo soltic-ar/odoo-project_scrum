@@ -5,6 +5,8 @@ access_project_meeting_manager,res.groups,model_project_scrum_meeting,project.gr
 access_project_meeting,res.groups,model_project_scrum_meeting,project.group_project_user,1,1,1,0
 access_project_us_manager,res.groups,model_project_scrum_us,project.group_project_manager,1,1,1,1
 access_project_us,res.groups,model_project_scrum_us,project.group_project_user,1,1,1,0
+access_project_us_type_manager,res.groups,model_project_scrum_us_type,project.group_project_manager,1,1,1,1
+access_project_us_type,res.groups,model_project_scrum_us_type,project.group_project_user,1,1,1,0
 access_project_actor_manager,res.groups,model_project_scrum_actors,project.group_project_manager,1,1,1,1
 access_project_actor,res.groups,model_project_scrum_actors,project.group_project_user,1,1,1,0
 access_project_test_manager,res.groups,model_project_scrum_test,project.group_project_manager,1,1,1,1

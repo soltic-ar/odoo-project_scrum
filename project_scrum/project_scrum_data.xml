@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="1">
+
+        <!-- User Stories Stages -->
+
+        <record id="project_ust_incubator" model="project.scrum.us.type">
+            <field name="sequence">1</field>
+            <field name="name">Incubator</field>
+            <field name="case_default" eval="True"/>
+        </record>
+        <record id="project_ust_approved" model="project.scrum.us.type">
+            <field name="sequence">10</field>
+            <field name="name">Approved</field>
+            <field name="case_default" eval="True"/>
+        </record>
+        <record id="project_ust_prepared" model="project.scrum.us.type">
+            <field name="sequence">11</field>
+            <field name="name">Prepared</field>
+            <field name="case_default" eval="True"/>
+        </record>
+        <record id="project_ust_inprogress" model="project.scrum.us.type">
+            <field name="sequence">12</field>
+            <field name="name">In Progress</field>
+            <field name="case_default" eval="True"/>
+        </record>
+        <record id="project_ust_totesting" model="project.scrum.us.type">
+            <field name="sequence">13</field>
+            <field name="name">To Testing</field>
+            <field name="case_default" eval="True"/>
+        </record>
+        <record id="project_ust_todeploy" model="project.scrum.us.type">
+            <field name="sequence">14</field>
+            <field name="name">To Deploy</field>
+            <field name="case_default" eval="True"/>
+        </record>
+        <record id="project_ust_done" model="project.scrum.us.type">
+            <field name="sequence">20</field>
+            <field name="name">Done</field>
+            <field name="case_default" eval="True"/>
+            <field name="fold" eval="True"/>
+        </record>
+        <record id="project_ust_cancel" model="project.scrum.us.type">
+            <field name="sequence">30</field>
+            <field name="name">Cancelled</field>
+            <field name="case_default" eval="True"/>
+            <field name="fold" eval="True"/>
+        </record>
+    </data>
+
+</openerp>

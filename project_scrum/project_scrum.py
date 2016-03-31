@@ -155,7 +155,9 @@ class project_user_stories(models.Model):
     company_id = fields.Many2one(related='project_id.analytic_account_id.company_id')
     #has_task = fields.Boolean()
     #has_test = fields.Boolean()
-    
+    stage_id = fields.Many2one('project.scrum.us.type', 'Stage', track_visibility='onchange', select=True,
+                    domain="[('project_ids', '=', project_id)]", copy=False)
+
     @api.one
     def _conv_html2text(self):  # method that return a short text from description of user story
         for d in self: 
@@ -198,11 +200,46 @@ class project_user_stories(models.Model):
         sprints = self.env['project.scrum.sprint'].search([('project_id', '=', project_id)], order='sequence').name_get()
         #sprints.sorted(key=lambda r: r.sequence)
         return sprints, None
-    
+
+    def _get_default_stage_id(self, cr, uid, context=None):
+        """ Gives default stage_id """
+        project_id = self._resolve_project_id_from_context(cr, uid, context=context)
+        search_domain = []
+        search_domain.append(('project_ids', '=', project_id))
+        search_domain.append(('fold', '=', False))
+        stage_ids = self.pool.get('project.scrum.us.type').search(cr, uid, search_domain, order='sequence', context=context)
+        if stage_ids:
+            return stage_ids[0]
+        return False
+
     _group_by_full = {
         'sprint_ids': _read_group_sprint_id,
         }
     name = fields.Char()
+
+    _defaults = {
+        'stage_id': lambda self, cr, uid, ctx=None: self._get_default_stage_id(cr, uid, context=ctx),
+    }
+
+class project_user_stories_type(models.Model):
+    _name = 'project.scrum.us.type'
+    _description = 'User Story Stage'
+    _order = 'sequence'
+
+    name = fields.Char('Stage Name', required=True, translate=True)
+    description = fields.Text('Description')
+    sequence = fields.Integer('Sequence')
+    case_default = fields.Boolean('Default for New Projects',
+                    help="If you check this field, this stage will be proposed by default on each new project. It will not assign this stage to existing projects.")
+    project_ids = fields.Many2many('project.project', 'project_scrum_us_type_rel', 'type_id', 'project_id', 'Projects')
+    fold = fields.Boolean('Folded in Kanban View',
+                           help='This stage is folded in the kanban view when'
+                           'there are no records in that stage to display.')
+
+    _defaults = {
+        'sequence': 1,
+    }
+    _order = 'sequence'
 
 class project_task(models.Model):
     _inherit = "project.task"
@@ -418,7 +455,7 @@ class project(models.Model):
     use_scrum = fields.Boolean(store=True)
     default_sprintduration = fields.Integer(string = 'Calendar', required=False, default=14,help="Default Sprint time for this project, in days")
     manhours = fields.Integer(string = 'Man Hours', required=False,help="How many hours you expect this project needs before it's finished")
-    
+    us_type_ids = fields.Many2many('project.scrum.us.type', 'project_scrum_us_type_rel', 'project_id', 'type_id', 'User Stories Stages', states={'close':[('readonly',True)], 'cancelled':[('readonly',True)]})
 
     def _sprint_count(self):    # method that calculate how many sprints exist
         for p in self:
@@ -435,6 +472,14 @@ class project(models.Model):
     def _test_case_count(self):    # method that calculate how many test cases exist
         for p in self:
             p.test_case_count = len(p.test_case_ids)
+
+    def _get_scrum_us_type_common(self, cr, uid, context):
+        ids = self.pool.get('project.scrum.us.type').search(cr, uid, [('case_default','=',1)], context=context)
+        return ids
+
+    _defaults = {
+        'us_type_ids': _get_scrum_us_type_common
+    }
 
 class test_case(models.Model):
     _name = 'project.scrum.test'

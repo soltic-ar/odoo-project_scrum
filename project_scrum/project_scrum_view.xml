@@ -210,7 +210,7 @@
             <field name="model">project.scrum.us</field>
             <field name="type">kanban</field>
             <field name="arch" type="xml">
-                <kanban default_group_by="project_id">
+                <kanban default_group_by="stage_id">
                     <field name="color"/>
                     <field name="name"/>
                     <field name="description_short"/>
@@ -222,15 +222,15 @@
                             <div class="oe_dropdown_toggle oe_dropdown_kanban" groups="base.group_user">
                                 <span class="oe_e">í</span>
                                 <ul class="oe_dropdown_menu">
-                                    <li>
                                     <t t-if="widget.view.is_action_enabled('edit')"><li><a type="edit">Edit...</a></li></t>
                                     <t t-if="widget.view.is_action_enabled('delete')"><li><a type="delete">Delete</a></li></t>
-                                    </li>
+                                    <li><ul class="oe_kanban_colorpicker" data-field="color"/></li>
                                 </ul>
                             </div>
                             <div class="oe_kanban_content">
                                 <div><b><field name="name"/></b></div>
                                 <p><font color="#BDBDBD"><field name="description_short"/></font></p>
+                                <p><field name="sprint_ids"/></p>
                             </div>
                             <div>
                                 <a t-if="record.task_count.raw_value">
@@ -255,6 +255,10 @@
             <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="User Stories">
+                    <!--Header States-->
+                    <header>
+                      <field name="stage_id" widget="statusbar" clickable="True" options="{'fold_field': 'fold'}"/>
+                    </header>
                     <sheet string="User Story">
                     <h1>
                         <field name="name" placeholder="User Story..." class="oe_inline"/>
@@ -294,7 +298,10 @@
                     <field name="sequence" widget="handle" />
                     <field name="name" />
                     <field name="user_id" />
+                    <field name="planned_hours" />
+                    <field name="effective_hours" />
                     <field name="date_deadline" />
+                    <field name="sprint_id" />
                     <field name="stage_id" />
                   </tree>
                 </field>
@@ -323,6 +330,7 @@
       <field name="arch" type="xml">
         <tree>
           <field name="name" />
+          <field name="stage_id" />
           <field name="actor_ids" />
           <field name="sprint_ids" />
           <field name="project_id" />
@@ -494,6 +502,18 @@
         </form>
       </field>
     </record>
+    <!--user story stage tree view-->
+    <record id="view_scrum_us_type_tree" model="ir.ui.view">
+        <field name="name">project.scrum.us.type.tree</field>
+        <field name="model">project.scrum.us.type</field>
+        <field name="arch" type="xml">
+            <tree string="User Story Stage">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="fold"/>
+            </tree>
+        </field>
+    </record>
     <!--sprint search bar-->
     <record id="view_ps_sprint_search" model="ir.ui.view">
       <field name="name">project.scrum.sprint.search</field>
@@ -568,13 +588,13 @@
         <search string="User Stories">
           <field name="name" />
           <field name="project_id" />
-          <field name="sprint_ids" />
+          <field name="stage_id" />
           <field name="task_ids" />
           <field name="test_ids" />
           <group expand="0" string="Group By...">
-            <filter string="Sprint" name="group_by_sprint" context="{'group_by':'sprint_ids'}" />
+            <filter string="State" name="group_by_state" context="{'group_by':'stage_id'}" />
             <separator orientation="vertical" />
-            <filter string="Project" name="group_by_project" domain="[]" coantext="{'group_by':'project_id'}" />
+            <filter string="Project" name="group_by_project" domain="[]" context="{'group_by':'project_id'}" />
           </group>
         </search>
       </field>
@@ -688,7 +708,7 @@
       <field name="res_model">project.scrum.us</field>
       <field name="view_type">form</field>
       <field name="view_mode">kanban,tree,form</field>
-      <field name="view_id" ref="view_ps_us_tree" />
+      <field name="view_id" ref="view_ps_us_kanban" />
       <field name="context">{"search_default_current": 1}</field>
       <field name="search_view_id" ref="view_ps_us_search" />
       <field name="help">The user stories of scrum.</field>
@@ -704,7 +724,7 @@
         {
         'search_default_project_id': [active_id],
         'default_project_id': active_id,
-        'search_default_group_by_project': 1,
+        'search_default_group_by_stage_id': 1,
         'active_test': False,
         }
       </field>
@@ -739,6 +759,22 @@
       <field name="search_view_id" ref="view_ps_tc_search" />
       <field name="help">The test case.</field>
     </record>
+    <!--access to user story stage tree view-->
+    <record id="action_ps_us_type_form" model="ir.actions.act_window">
+        <field name="name">User Story Stages</field>
+        <field name="res_model">project.scrum.us.type</field>
+        <field name="view_type">form</field>
+        <field name="view_id" ref="view_scrum_us_type_tree"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a stage in the user story pipeline.
+          </p><p>
+            Define the steps that will be used in the project from the
+            creation of the user story.
+          </p>
+        </field>
+    </record>
+
     <!--Add buttons on project form view that can connect to user stories and sprints-->
     <record id="edit_ps_project" model="ir.ui.view">
       <field name="name">project.scrum.project.form</field>
@@ -774,7 +810,10 @@
           <field name="partner_id" nolabel="1" />
         </field>
         <page name="project_stages" position="after">
-          <page name="tasks" string="Tasks">
+          <page string="Users Stories Stages" attrs="{'invisible': [('use_scrum', '=', False)]}" name="us_stages">
+             <field name="us_type_ids"/>
+          </page>
+          <page name="tasks" string="Tasks" attrs="{'invisible': [('use_scrum', '=', False)]}">
             <field name="task_ids" string="Task" context="{
                                         'default_project_id': active_id,
                                         }">
@@ -819,6 +858,8 @@
     <menuitem sequence="22" action="action_ps_meeting_all" id="menu_action_ps_meeting_all" parent="menu_scrum_in_config" />
     <!-- menu for accessing to test case-->
     <menuitem sequence="23" action="action_ps_tc_all" id="menu_action_ps_tc_all" parent="menu_scrum_in_config" />
+    <!-- menu for accessing to user story stage-->
+    <menuitem sequence="24" action="action_ps_us_type_form" id="menu_action_ps_us_type_form" parent="menu_scrum_in_config" />
     <!--user stories and sprints can be seen in project kanban view-->
     <record id="view_ps_kanban" model="ir.ui.view">
       <field name="name">project.scrum.project.kanban</field>

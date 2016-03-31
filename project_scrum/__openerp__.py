@@ -19,6 +19,7 @@ More information:
     'website': 'http://www.vertel.se',
     'depends': ['project', 'mail'],
     'data': ['project_scrum_view.xml',
+        'project_scrum_data.xml',
         'wizard/project_scrum_test_task_view.xml',
         'security/ir.model.access.csv',
         'security/project_security.xml',
